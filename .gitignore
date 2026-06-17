@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups
+*.bak
+*.bak2
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive — never commit
+*.key
+*.pem
+*.env
+.env.*
+credentials*
+*secret*
+*password*
+
+# Temp / cache files
+/tmp/
+*.log
+status.json
+foremost_cache.json
+
+# Claude
+.claude/

@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Migra — Recovery & Migration Engine</title>
+<style>
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/font/geist-sans/Geist[wght].woff2') format('woff2');
+  font-weight: 100 900; font-style: normal;
+}
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
+/* ═══ ICE CREAM THEME (Catppuccin Frappé Light) ═══ */
+:root, [data-theme="light"] {
+  --rosewater: #f2d5cf; --flamingo: #eebebe; --pink: #f4b8e4;
+  --mauve: #ca9ee6; --red: #e78284; --maroon: #ea999c;
+  --peach: #ef9f76; --yellow: #e5c890; --green: #a6d189;
+  --teal: #81c8be; --sky: #99d1db; --sapphire: #85c1dc;
+  --blue: #8caaee; --lavender: #babbf1;
+  --text: #232634; --subtext1: #292c3c; --subtext0: #303446;
+  --overlay2: #414559; --overlay1: #51576d; --overlay0: #626880;
+  --surface2: #737994; --surface1: #838ba7; --surface0: #949cbb;
+  --base: #a5adce; --mantle: #b5bfe2; --crust: #c6d0f5;
+
+  --bg-root: #f2d5cf;
+  --bg-panel: rgba(255,245,240,0.75);
+  --bg-card: rgba(255,252,250,0.65);
+  --bg-input: rgba(255,255,255,0.55);
+  --bg-modal: rgba(245,235,228,0.96);
+  --bg-glass: rgba(255,250,245,0.5);
+  --border-subtle: rgba(200,180,170,0.3);
+  --border-card: rgba(200,180,170,0.45);
+  --border-accent: rgba(140,170,238,0.4);
+  --text-primary: #232634;
+  --text-secondary: #51576d;
+  --text-dim: #838ba7;
+  --text-bright: #303446;
+  --accent: #8caaee;
+  --accent2: #ca9ee6;
+  --success: #a6d189;
+  --warning: #e5c890;
+  --danger: #e78284;
+  --info: #85c1dc;
+  --immich: #8839ef;
+  --jellyfin: #1e66f5;
+  --glow-soft: rgba(140,170,238,0.12);
+  --glow-strong: rgba(140,170,238,0.2);
+  --shadow-card: 0 2px 16px rgba(150,130,120,0.08);
+  --shadow-lg: 0 8px 36px rgba(150,130,120,0.14);
+  --font-body: 'Geist Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', sans-serif;
+  --font-ui: 'Rajdhani', sans-serif;
+  --radius: 14px; --radius-sm: 8px;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  --canvas-bg: #faf3ee;
+  --canvas-fog: #f2d5cf;
+}
+
+[data-theme="dark"] {
+  --rosewater: #1a1015; --flamingo: #1a1218; --pink: #1a1420;
+  --mauve: #181420; --red: #e78284; --maroon: #ea999c;
+  --peach: #ef9f76; --yellow: #e5c890; --green: #a6d189;
+  --teal: #81c8be; --sky: #99d1db; --sapphire: #85c1dc;
+  --blue: #8caaee; --lavender: #babbf1;
+
+  --bg-root: #0a0a0f;
+  --bg-panel: rgba(13,13,26,0.85);
+  --bg-card: rgba(17,17,34,0.75);
+  --bg-input: rgba(0,0,0,0.4);
+  --bg-modal: rgba(10,10,20,0.95);
+  --bg-glass: rgba(17,17,34,0.55);
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-card: rgba(255,255,255,0.1);
+  --border-accent: rgba(0,255,136,0.3);
+  --text-primary: #c8d6e5;
+  --text-secondary: #8899aa;
+  --text-dim: #5a6a7a;
+  --text-bright: #e8f0f8;
+  --accent: #00ff88;
+  --accent2: #aa44ff;
+  --success: #00ff88;
+  --warning: #ffcc00;
+  --danger: #ff3344;
+  --info: #00aaff;
+  --immich: #b98cf5;
+  --jellyfin: #5b9cf5;
+  --glow-soft: rgba(0,255,136,0.1);
+  --glow-strong: rgba(0,255,136,0.18);
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 36px rgba(0,0,0,0.5);
+  --canvas-bg: #0a0a0f;
+  --canvas-fog: #0a0a0f;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family:var(--font-body);
+  background:var(--bg-root);
+  color:var(--text-primary);
+  line-height:1.6;
+  overflow-x:hidden;
+  min-height:100vh;
+  cursor:default;
+  -webkit-font-smoothing:antialiased;
+  transition:background 0.5s ease, color 0.5s ease;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 10%, rgba(140,170,238,0.1), transparent 60%),
+    radial-gradient(ellipse 55% 60% at 80% 45%, rgba(202,158,230,0.08), transparent 55%),
+    radial-gradient(ellipse 45% 45% at 50% 85%, rgba(166,209,137,0.07), transparent 50%);
+  pointer-events:none;
+}
+[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 10%, rgba(0,255,136,0.04), transparent 60%),
+    radial-gradient(ellipse 55% 60% at 80% 45%, rgba(170,68,255,0.04), transparent 55%),
+    radial-gradient(ellipse 45% 45% at 50% 85%, rgba(0,170,255,0.03), transparent 50%);
+}
+
+/* ═══ TOP BAR ═══ */
+#top-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 18px;
+  background:var(--bg-panel);
+  border-bottom:1px solid var(--border-subtle);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  gap:10px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:100;
+  transition:all 0.5s ease;
+}
+#top-bar .logo {
+  font-family:var(--font-display);
+  font-size:1rem; font-weight:900;
+  letter-spacing:1.5px; color:var(--accent);
+  white-space:nowrap;
+}
+.theme-toggle {
+  width:40px; height:22px; border-radius:11px;
+  background:var(--border-card); border:1px solid var(--border-accent);
+  cursor:pointer; position:relative; transition:all 0.3s ease; flex-shrink:0;
+}
+.theme-toggle::after {
+  content:''; position:absolute; width:16px; height:16px; border-radius:50%;
+  background:var(--accent); top:2px; left:2px;
+  transition:all 0.3s ease; box-shadow:0 0 6px var(--glow-soft);
+}
+[data-theme="dark"] .theme-toggle::after { left:20px; }
+
+.status-dots { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.status-dot {
+  display:flex; align-items:center; gap:4px;
+  font-family:var(--font-mono); font-size:0.55rem;
+  color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px;
+}
+.status-dot .dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--danger); box-shadow:0 0 6px var(--danger);
+  animation:pulse-dot 2s infinite;
+}
+.status-dot .dot.online { background:var(--success); box-shadow:0 0 6px var(--success); }
+.status-dot .dot.busy { background:var(--warning); box-shadow:0 0 8px var(--warning); animation:pulse-dot 0.6s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.3;transform:scale(1.5);} }
+
+.top-actions { display:flex; gap:4px; flex-wrap:wrap; }
+
+/* ═══ BUTTONS ═══ */
+.btn {
+  font-family:var(--font-ui); font-size:0.65rem; font-weight:700;
+  letter-spacing:0.7px; text-transform:uppercase;
+  padding:6px 14px; border:1px solid transparent; border-radius:var(--radius-sm);
+  cursor:pointer; transition:all 0.2s ease;
+  background:transparent; color:var(--text-primary);
+  position:relative; overflow:hidden; white-space:nowrap;
+}
+.btn::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.06) 50%,transparent 60%);
+  transform:translateX(-100%); transition:transform 0.3s;
+}
+.btn:hover::before { transform:translateX(100%); }
+.btn-accent { border-color:var(--accent); color:var(--accent); }
+.btn-accent:hover { background:var(--glow-soft); box-shadow:0 0 14px var(--glow-strong); }
+.btn-immich { border-color:var(--immich); color:var(--immich); }
+.btn-immich:hover { background:rgba(136,57,239,0.08); }
+.btn-jellyfin { border-color:var(--jellyfin); color:var(--jellyfin); }
+.btn-jellyfin:hover { background:rgba(30,102,245,0.08); }
+.btn-red { border-color:var(--danger); color:var(--danger); }
+.btn-red:hover { background:rgba(231,130,132,0.08); }
+.btn-sm { padding:3px 10px; font-size:0.55rem; }
+.btn-icon { padding:6px 10px; }
+
+/* ═══ STAGE NAV ═══ */
+#stage-nav {
+  display:flex; gap:0; padding:0 12px;
+  background:var(--bg-panel);
+  border-bottom:1px solid var(--border-subtle);
+  overflow-x:auto; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+.stage-tab {
+  padding:8px 14px; font-family:var(--font-display);
+  font-size:0.55rem; font-weight:700; letter-spacing:0.8px;
+  text-transform:uppercase; color:var(--text-dim);
+  cursor:pointer; border-bottom:2px solid transparent;
+  transition:all 0.25s ease; white-space:nowrap;
+  display:flex; align-items:center; gap:5px;
+  background:none; border-top:none; border-left:none; border-right:none;
+}
+.stage-tab:hover { color:var(--text-primary); border-bottom-color:var(--border-accent); }
+.stage-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--glow-soft); }
+.stage-tab .si { font-size:0.85rem; }
+.stage-tab .badge {
+  font-family:var(--font-mono); font-size:0.45rem;
+  padding:1px 5px; border-radius:6px; background:var(--border-card); color:var(--text-dim);
+}
+.stage-tab.active .badge { background:var(--accent); color:#fff; }
+.stage-tab .badge.immich { background:rgba(136,57,239,0.2); color:var(--immich); }
+.stage-tab .badge.jellyfin { background:rgba(30,102,245,0.2); color:var(--jellyfin); }
+
+/* ═══ MAIN GRID ═══ */
+#main-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  grid-template-rows:auto auto auto auto;
+  gap:10px; padding:10px; flex:1;
+}
+@media(max-width:960px){#main-grid{grid-template-columns:1fr;}}
+
+/* ═══ PANELS ═══ */
+.panel {
+  background:var(--bg-panel); border:1px solid var(--border-subtle);
+  border-radius:var(--radius); padding:12px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  position:relative; overflow:hidden; transition:all 0.5s ease;
+}
+.panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.25;
+}
+.panel-header {
+  font-family:var(--font-display); font-size:0.6rem; font-weight:700;
+  letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--accent); margin-bottom:8px;
+  display:flex; align-items:center; gap:6px;
+}
+.panel-header.immich { color:var(--immich); }
+.panel-header.jellyfin { color:var(--jellyfin); }
+
+.card {
+  background:var(--bg-card); border:1px solid var(--border-card);
+  border-radius:var(--radius-sm); padding:10px;
+  transition:all 0.3s ease;
+}
+.card:hover { border-color:var(--border-accent); box-shadow:var(--shadow-card); }
+
+/* ═══ 3D VIEWPORT ═══ */
+#viewport-wrap { grid-column:1/-1; min-height:340px; position:relative; overflow:hidden; }
+#three-container {
+  position:absolute; inset:0; background:var(--canvas-bg); transition:background 0.5s ease;
+}
+.viewport-overlay {
+  position:absolute; bottom:8px; left:12px; right:12px;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  pointer-events:none; z-index:2;
+}
+.vp-stat {
+  font-family:var(--font-mono); font-size:0.5rem; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:0.6px;
+}
+.vp-stat .val { color:var(--accent); font-size:0.65rem; }
+.vp-stat .val.danger { color:var(--danger); }
+.vp-stat .val.success { color:var(--success); }
+.vp-label {
+  position:absolute; top:10px; left:14px;
+  font-family:var(--font-display); font-size:0.65rem; font-weight:700;
+  letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--accent); pointer-events:none; z-index:2;
+}
+
+/* ═══ DRIVE CARDS (CSS 3D) ═══ */
+#drives-row {
+  display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;
+}
+.drive-card {
+  min-width:160px; flex:1;
+  background:var(--bg-card); border:1px solid var(--border-card);
+  border-radius:var(--radius-sm); padding:10px;
+  cursor:pointer; transition:all 0.3s ease;
+  transform-style:preserve-3d;
+  perspective:400px;
+}
+.drive-card:hover { border-color:var(--accent); box-shadow:var(--shadow-card); transform:translateY(-2px) rotateX(2deg); }
+.drive-card.active { border-color:var(--accent); box-shadow:0 0 18px var(--glow-soft); }
+.drive-card .d-icon {
+  width:38px; height:38px; margin:0 auto 5px; border-radius:50%;
+  background:var(--glow-soft); border:2px solid var(--border-accent);
+  display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+  animation:drive-spin 4s linear infinite paused;
+  transform-style:preserve-3d;
+}
+.drive-card.active .d-icon { animation-play-state:running; }
+@keyframes drive-spin { 100%{transform:rotateY(360deg);} }
+.drive-card .d-label {
+  font-family:var(--font-display); font-size:0.55rem; font-weight:700;
+  letter-spacing:0.6px; text-align:center; color:var(--text-primary);
+}
+.drive-card .d-pct {
+  font-family:var(--font-mono); font-size:1.1rem; font-weight:700;
+  text-align:center; color:var(--accent);
+}
+.drive-card .d-sub {
+  font-family:var(--font-mono); font-size:0.45rem;
+  text-align:center; color:var(--text-dim);
+}
+.drive-card .d-bar { margin-top:5px; height:2px; background:var(--border-subtle); border-radius:1px; overflow:hidden; }
+.drive-card .d-bar-fill { height:100%; background:var(--accent); border-radius:1px; transition:width 1s ease; }
+.drive-card.add-new {
+  border-style:dashed; border-color:var(--border-card);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:100px;
+}
+.drive-card.add-new .plus { font-size:1.4rem; color:var(--text-dim); }
+.drive-card.add-new:hover .plus { color:var(--accent); }
+
+/* ═══ HEALTH BARS ═══ */
+.hbar {
+  height:6px; background:var(--border-subtle); border-radius:3px;
+  overflow:hidden; margin:4px 0; border:1px solid var(--border-card);
+}
+.hbar-fill {
+  height:100%; border-radius:3px;
+  transition:width 1.5s cubic-bezier(0.4,0,0.2,1); position:relative;
+}
+.hbar-fill::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.2) 50%,transparent 100%);
+  animation:shimmer 2s infinite;
+}
+@keyframes shimmer { 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+.hbar-fill.a { background:linear-gradient(90deg,var(--accent),var(--info)); box-shadow:0 0 8px var(--glow-soft); }
+.hbar-fill.p { background:linear-gradient(90deg,var(--accent2),var(--pink)); }
+.hbar-fill.g { background:linear-gradient(90deg,var(--success),var(--teal)); }
+.hbar-fill.r { background:linear-gradient(90deg,var(--danger),var(--peach)); }
+
+/* ═══ STAT CARDS ═══ */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.stat-card {
+  background:var(--bg-glass); border:1px solid var(--border-card);
+  border-radius:var(--radius-sm); padding:7px 10px;
+}
+.stat-card .sl {
+  font-family:var(--font-mono); font-size:0.5rem; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:0.6px; margin-bottom:1px;
+}
+.stat-card .sv {
+  font-family:var(--font-mono); font-size:0.85rem; font-weight:700;
+  color:var(--text-primary);
+}
+.stat-card .sv.a { color:var(--accent); }
+.stat-card .sv.d { color:var(--danger); }
+.stat-card .sv.s { color:var(--success); }
+
+/* ═══ FOLDER BARS ═══ */
+.folder-row {
+  display:flex; align-items:center; gap:8px; margin:3px 0;
+  font-family:var(--font-mono); font-size:0.5rem;
+}
+.folder-label { width:70px; text-align:right; color:var(--text-dim); flex-shrink:0; }
+.folder-track {
+  flex:1; height:14px; background:var(--border-subtle);
+  border-radius:4px; overflow:hidden; position:relative;
+}
+.folder-fill {
+  height:100%; border-radius:4px; transition:width 1s ease;
+  display:flex; align-items:center; padding-left:6px;
+  font-size:0.42rem; color:#fff; font-weight:600;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  white-space:nowrap; overflow:hidden;
+}
+.folder-fill.done { filter:brightness(0.85); }
+
+/* Rainbow folder colors */
+#fbar-7gopro { background:linear-gradient(90deg,#e78284,#ef9f76); }
+#fbar-Quik { background:linear-gradient(90deg,#ef9f76,#e5c890); }
+#fbar-Contest { background:linear-gradient(90deg,#e5c890,#a6d189); }
+#fbar-360gopro { background:linear-gradient(90deg,#a6d189,#81c8be); }
+#fbar-BRITNEEE { background:linear-gradient(90deg,#81c8be,#8caaee); }
+#fbar-eurotrip { background:linear-gradient(90deg,#8caaee,#ca9ee6); }
+
+/* ═══ FILE COUNTERS ═══ */
+.file-counter-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:4px; margin-top:6px;
+}
+.file-counter {
+  background:var(--bg-glass); border:1px solid var(--border-card);
+  border-radius:6px; padding:5px 7px;
+  text-align:center; transition:all 0.2s ease;
+}
+.file-counter:hover { border-color:var(--border-accent); }
+.file-counter .ci { font-size:1rem; }
+.file-counter .cn {
+  font-family:var(--font-mono); font-size:0.85rem; font-weight:700;
+  color:var(--text-primary);
+}
+.file-counter .cl {
+  font-size:0.5rem; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:0.5px;
+}
+.file-counter.growing .cn { animation:pulse 0.3s ease; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.1);} }
+
+/* ═══ SPARKLINE ═══ */
+.sparkline-wrap { margin-top:8px; }
+.sparkline { display:flex; align-items:flex-end; gap:1px; height:36px; padding:2px 0; }
+.sparkline-bar { flex:1; min-width:2px; background:var(--accent); border-radius:1px 1px 0 0;
+  transition:height 0.5s ease; opacity:0.7; }
+
+/* ═══ FILE RIVER ═══ */
+.file-river {
+  height:28px; background:var(--bg-input); border-radius:6px;
+  overflow:hidden; position:relative; margin:6px 0;
+}
+.file-river-inner {
+  display:flex; gap:6px; position:absolute;
+  animation:river-flow 6s linear infinite;
+  white-space:nowrap;
+}
+@keyframes river-flow { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+.file-river-icon { font-size:1rem; opacity:0.7; }
+
+/* ═══ LOG ═══ */
+#log-panel { grid-column:1/-1; max-height:150px; }
+.log-scroll {
+  max-height:105px; overflow-y:auto;
+  font-family:var(--font-mono); font-size:0.5rem;
+  color:var(--text-dim); line-height:1.5;
+}
+.log-line {
+  padding:1px 0; border-bottom:1px solid var(--border-subtle);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.log-line .ts { color:var(--text-dim); margin-right:6px; opacity:0.45; }
+.log-line .msg { color:var(--text-primary); }
+.log-line.ok .msg { color:var(--success); }
+.log-line.warn .msg { color:var(--warning); }
+.log-line.err .msg { color:var(--danger); }
+
+/* ═══ MODALS ═══ */
+.modal-bg {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.45); z-index:1000;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+.modal-bg.open { display:flex; }
+.modal-box {
+  background:var(--bg-modal); border:1px solid var(--border-accent);
+  border-radius:var(--radius); padding:20px;
+  max-width:520px; width:90%; max-height:80vh; overflow-y:auto;
+  box-shadow:var(--shadow-lg); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+}
+.modal-box h2 {
+  font-family:var(--font-display); font-size:0.75rem; letter-spacing:1.5px;
+  color:var(--accent); margin-bottom:12px; text-transform:uppercase;
+}
+.form-group { margin-bottom:8px; }
+.form-group label {
+  display:block; font-family:var(--font-display);
+  font-size:0.5rem; letter-spacing:0.8px;
+  color:var(--text-dim); text-transform:uppercase; margin-bottom:2px;
+}
+.form-group input, .form-group select {
+  width:100%; background:var(--bg-input); border:1px solid var(--border-card);
+  border-radius:var(--radius-sm); padding:6px 8px;
+  color:var(--text-primary); font-family:var(--font-mono); font-size:0.6rem;
+  outline:none; transition:border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color:var(--accent); box-shadow:0 0 6px var(--glow-soft);
+}
+.form-actions { display:flex; gap:5px; justify-content:flex-end; margin-top:12px; }
+
+.server-entry {
+  display:flex; align-items:center; gap:5px; padding:5px 7px;
+  background:var(--bg-input); border-radius:var(--radius-sm);
+  margin-bottom:3px; border:1px solid var(--border-card);
+}
+.server-entry .s-info { flex:1; font-family:var(--font-mono); font-size:0.5rem; }
+.server-entry .s-name { color:var(--accent); }
+.server-entry .s-host { color:var(--text-dim); }
+
+/* ═══ TOAST ═══ */
+#toast-container {
+  position:fixed; top:14px; right:14px; z-index:10000;
+  display:flex; flex-direction:column; gap:5px;
+}
+.toast {
+  background:var(--bg-modal); border:1px solid var(--accent);
+  border-radius:var(--radius-sm); padding:7px 14px;
+  font-family:var(--font-mono); font-size:0.55rem;
+  color:var(--text-primary); box-shadow:0 0 16px var(--glow-soft);
+  animation:toast-in 0.3s ease, toast-out 0.3s ease 3s forwards;
+  max-width:340px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+.toast.error { border-color:var(--danger); }
+@keyframes toast-in { 0%{opacity:0;transform:translateX(35px);} 100%{opacity:1;transform:translateX(0);} }
+@keyframes toast-out { 0%{opacity:1;} 100%{opacity:0;transform:translateY(-12px);} }
+
+/* ═══ RING CHART ═══ */
+.ring-chart { position:relative; width:100px; height:100px; flex-shrink:0; }
+.ring-chart svg { transform:rotate(-90deg); }
+.ring-chart .bg-ring { fill:none; stroke:var(--border-card); stroke-width:8; }
+.ring-chart .fg-ring {
+  fill:none; stroke:var(--accent); stroke-width:8; stroke-linecap:round;
+  filter:drop-shadow(0 0 4px var(--glow-soft));
+  transition:stroke-dashoffset 1s ease;
+}
+.ring-center {
+  position:absolute; inset:0; display:flex;
+  flex-direction:column; align-items:center; justify-content:center;
+}
+.ring-pct { font-size:1.2rem; font-weight:800; color:var(--text-primary); }
+.ring-label { font-size:0.5rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; }
+
+/* ═══ SCROLLBARS ═══ */
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border-card); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:var(--border-accent); }
+
+/* ═══ DATA FLOW PIPELINE ═══ */
+.flow-pipes {
+  display:flex; align-items:center; gap:0; padding:6px 0;
+  font-family:var(--font-mono); font-size:0.5rem; color:var(--text-dim); overflow-x:auto;
+}
+.flow-node {
+  padding:4px 10px; background:var(--bg-input); border-radius:4px;
+  border:1px solid var(--border-card); text-transform:uppercase; letter-spacing:0.6px; white-space:nowrap;
+}
+.flow-node.src { border-color:var(--accent); color:var(--accent); }
+.flow-node.imm { border-color:var(--immich); color:var(--immich); }
+.flow-node.jel { border-color:var(--jellyfin); color:var(--jellyfin); }
+.flow-arrow { padding:0 4px; color:var(--accent); animation:flow-pulse 1s infinite; }
+@keyframes flow-pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+</style>
+<body>
+
+<div id="app-root">
+
+<!-- ═══ TOP BAR ═══ -->
+<div id="top-bar">
+  <span class="logo">⚡ LA MIGRA</span>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></button>
+  <div class="status-dots">
+    <span class="status-dot"><span class="dot online" id="dot-server"></span> SYS</span>
+    <span class="status-dot"><span class="dot" id="dot-recovery"></span> REC</span>
+    <span class="status-dot"><span class="dot" id="dot-carving"></span> CARV</span>
+    <span class="status-dot"><span class="dot" id="dot-migration"></span> MIG</span>
+    <span class="status-dot" style="color:var(--accent);" id="clock">--</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn btn-accent" onclick="openModal('settings-modal')">⚙ Config</button>
+    <button class="btn btn-accent btn-sm" onclick="openModal('new-drive-modal')">💽 +Drive</button>
+    <button class="btn btn-immich btn-sm" onclick="actionClassify()">🔍 Classify</button>
+    <button class="btn btn-jellyfin btn-sm" onclick="actionStartMigration()">🚀 Migrate</button>
+  </div>
+</div>
+
+<!-- ═══ STAGE NAV ═══ -->
+<div id="stage-nav">
+  <button class="stage-tab active" data-stage="recovery" onclick="switchStage('recovery')">
+    <span class="si">🩺</span> Block Recovery <span class="badge" id="badge-recovery">--</span>
+  </button>
+  <button class="stage-tab" data-stage="carving" onclick="switchStage('carving')">
+    <span class="si">🔬</span> File Carving <span class="badge" id="badge-carving">--</span>
+  </button>
+  <button class="stage-tab" data-stage="classify" onclick="switchStage('classify')">
+    <span class="si">🏷</span> Classify <span class="badge" id="badge-classify">--</span>
+  </button>
+  <button class="stage-tab" data-stage="migrate" onclick="switchStage('migrate')">
+    <span class="si">📡</span> Migration <span class="badge" id="badge-migrate">--</span>
+  </button>
+  <button class="stage-tab" data-stage="immich" onclick="switchStage('immich')">
+    <span class="si">🖼</span> Immich <span class="badge immich" id="badge-immich">--</span>
+  </button>
+  <button class="stage-tab" data-stage="jellyfin" onclick="switchStage('jellyfin')">
+    <span class="si">🎬</span> Jellyfin <span class="badge jellyfin" id="badge-jellyfin">--</span>
+  </button>
+  <button class="stage-tab" data-stage="verify" onclick="switchStage('verify')">
+    <span class="si">✅</span> Verify <span class="badge" id="badge-verify">--</span>
+  </button>
+</div>
+
+<!-- ═══ MAIN GRID ═══ -->
+<div id="main-grid">
+
+  <!-- Drives -->
+  <div id="drives-section" class="panel" style="grid-column:1/-1;">
+    <div class="panel-header">💽 Managed Drives</div>
+    <div id="drives-row"></div>
+  </div>
+
+  <!-- 3D Viewport -->
+  <div id="viewport-wrap" class="panel">
+    <div class="vp-label" id="stage-label">🩺 BLOCK RECOVERY</div>
+    <div id="three-container"></div>
+    <div class="viewport-overlay">
+      <div>
+        <div class="vp-stat">DRIVE: <span class="val" id="v-name">--</span></div>
+        <div class="vp-stat">SECTORS: <span class="val success" id="v-sectors">--</span></div>
+        <div class="vp-stat">BAD: <span class="val danger" id="v-bad">--</span></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="vp-stat">READ: <span class="val" id="v-read">--</span></div>
+        <div class="vp-stat">RATE: <span class="val" id="v-rate">--</span></div>
+        <div class="vp-stat">ETA: <span class="val" id="v-eta">--</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE: RECOVERY ═══ -->
+  <div id="stage-recovery" class="card" style="grid-column:1/-1;">
+    <div class="panel-header">🩺 Block Recovery — sophjus</div>
+    <div class="hbar"><div class="hbar-fill a" id="bar-rec" style="width:0%"></div></div>
+    <div class="stat-grid" style="margin-top:6px;">
+      <div class="stat-card"><div class="sl">Progress</div><div class="sv a" id="s-rec-pct">--</div></div>
+      <div class="stat-card"><div class="sl">Rescued</div><div class="sv" id="s-rec-gb">--</div></div>
+      <div class="stat-card"><div class="sl">Bad Sectors</div><div class="sv d" id="s-rec-bad">--</div></div>
+      <div class="stat-card"><div class="sl">ETA</div><div class="sv" id="s-rec-eta">--</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE: FILE CARVING ═══ -->
+  <div id="stage-carving" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header">🔬 File Carving — foremost</div>
+    <div class="hbar"><div class="hbar-fill p" id="bar-fm" style="width:0%"></div></div>
+    <div class="stat-grid" style="margin-top:6px;">
+      <div class="stat-card"><div class="sl">Progress</div><div class="sv a" id="s-fm-pct">--</div></div>
+      <div class="stat-card"><div class="sl">Files</div><div class="sv" id="s-fm-files">--</div></div>
+      <div class="stat-card"><div class="sl">Size</div><div class="sv" id="s-fm-size">--</div></div>
+      <div class="stat-card"><div class="sl">ETA</div><div class="sv" id="s-fm-eta">--</div></div>
+    </div>
+    <!-- File river -->
+    <div class="file-river"><div class="file-river-inner" id="file-river">
+      <span class="file-river-icon">📷</span><span>🎬</span><span>🖼️</span><span>📸</span><span>🎥</span>
+      <span>📷</span><span>📹</span><span>🖼️</span><span>📸</span><span>🎬</span>
+      <span>📷</span><span>🎥</span><span>📷</span><span>🎬</span><span>🖼️</span>
+      <span>📸</span><span>🎥</span><span>📷</span><span>📹</span><span>🖼️</span>
+      <span>📷</span><span>🎬</span><span>🖼️</span><span>📸</span><span>🎥</span>
+    </div></div>
+    <!-- File counters -->
+    <div class="file-counter-grid" id="file-counter-grid"></div>
+    <div style="font-family:var(--font-mono);font-size:0.55rem;margin-top:4px;color:var(--text-dim);">
+      <strong id="fm-total-label">0 files</strong> — <span id="fm-size-label">0 B</span>
+    </div>
+    <!-- Sparkline -->
+    <div class="sparkline-wrap"><div class="sparkline" id="sparkline"></div></div>
+  </div>
+
+  <!-- ═══ STAGE: CLASSIFY ═══ -->
+  <div id="stage-classify" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header">🏷 Classification</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">Photos (Immich)</div><div class="sv s" id="s-cls-photo">--</div></div>
+      <div class="stat-card"><div class="sl">Review (memes/etc)</div><div class="sv d" id="s-cls-review">--</div></div>
+      <div class="stat-card"><div class="sl">Videos (Jellyfin)</div><div class="sv a" id="s-cls-video">--</div></div>
+      <div class="stat-card"><div class="sl">Status</div><div class="sv" id="s-cls-status">Standby</div></div>
+    </div>
+    <div class="flow-pipes" style="margin-top:6px;">
+      <span class="flow-node src">🔬 foremost_out</span>
+      <span class="flow-arrow">▸</span>
+      <span class="flow-node">🏷 classify</span>
+      <span class="flow-arrow">▸</span>
+      <span class="flow-node imm">🖼 immich</span>
+      <span class="flow-arrow">▸</span>
+      <span class="flow-node jel">🎬 jellyfin</span>
+      <span class="flow-arrow">▸</span>
+      <span class="flow-node" style="border-color:var(--danger);color:var(--danger);">📁 review</span>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE: MIGRATION ═══ -->
+  <div id="stage-migrate" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header">📡 Data Migration (rsync)</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">Status</div><div class="sv a" id="s-mig-status">Standby</div></div>
+      <div class="stat-card"><div class="sl">Source</div><div class="sv" id="s-mig-src">sophjus</div></div>
+      <div class="stat-card"><div class="sl">Destination</div><div class="sv" id="s-mig-dest">zima</div></div>
+      <div class="stat-card"><div class="sl">Rate</div><div class="sv" id="s-mig-rate">--</div></div>
+    </div>
+    <div style="margin-top:6px;" id="folder-bars"></div>
+  </div>
+
+  <!-- ═══ STAGE: IMMICH ═══ -->
+  <div id="stage-immich" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header immich">🖼 Immich Photo Library</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">Folders</div><div class="sv">6</div></div>
+      <div class="stat-card"><div class="sl">Est. Total</div><div class="sv">~1,105 GB</div></div>
+      <div class="stat-card"><div class="sl">Transfer</div><div class="sv">ddrescue → rsync</div></div>
+      <div class="stat-card"><div class="sl">Status</div><div class="sv" style="color:var(--warning);">⏳ pending</div></div>
+    </div>
+    <div class="flow-pipes" style="margin-top:6px;">
+      <span class="flow-node src">💽 sophjus</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 7gopro (50 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 Quik (0.2 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 Contest (2.3 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 360gopro (339 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 BRITNEEE (8.9 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📦 eurotrip (705 GB)</span><span class="flow-arrow">▸</span>
+      <span class="flow-node imm">🖼 Immich</span>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE: JELLYFIN ═══ -->
+  <div id="stage-jellyfin" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header jellyfin">🎬 Jellyfin Media Library</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">Items</div><div class="sv">15 files/folders</div></div>
+      <div class="stat-card"><div class="sl">Est. Size</div><div class="sv">~50 GB</div></div>
+      <div class="stat-card"><div class="sl">Transfer</div><div class="sv">ddrescue → rsync</div></div>
+      <div class="stat-card"><div class="sl">Status</div><div class="sv" style="color:var(--warning);">⏳ pending</div></div>
+    </div>
+    <div class="flow-pipes" style="margin-top:6px;">
+      <span class="flow-node src">💽 archiveg</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">🎬 Movies</span><span class="flow-arrow">▸</span>
+      <span class="flow-node">📺 Series</span><span class="flow-arrow">▸</span>
+      <span class="flow-node jel">🎬 Jellyfin</span>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE: VERIFY ═══ -->
+  <div id="stage-verify" class="card" style="grid-column:1/-1; display:none;">
+    <div class="panel-header">✅ Verification</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">Files Checked</div><div class="sv" id="s-ver-checked">--</div></div>
+      <div class="stat-card"><div class="sl">Verified OK</div><div class="sv s" id="s-ver-ok">--</div></div>
+      <div class="stat-card"><div class="sl">Mismatches</div><div class="sv d" id="s-ver-bad">--</div></div>
+      <div class="stat-card"><div class="sl">Status</div><div class="sv" id="s-ver-status">Standby</div></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div id="log-panel" class="panel">
+    <div class="panel-header">📜 Operations Log</div>
+    <div class="log-scroll" id="log-scroll"></div>
+  </div>
+
+</div></div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal-box">
+    <h2>⚙ Configuration</h2>
+    <div class="form-group"><label>Servers</label><div id="server-list"></div>
+      <button class="btn btn-accent btn-sm" style="margin-top:4px;" onclick="addServer()">+ Server</button>
+    </div>
+    <div class="form-group"><label>Immich Library</label><input type="text" id="cfg-immich" value="/srv/photos/external"></div>
+    <div class="form-group"><label>Jellyfin Media</label><input type="text" id="cfg-jellyfin" value="/srv/media"></div>
+    <div class="form-group"><label>Recovery Output</label><input type="text" id="cfg-recovery" value="/srv/photos/foremost_out"></div>
+    <div class="form-group"><label>Review Dir</label><input type="text" id="cfg-review" value="/srv/photos/_review"></div>
+    <div class="form-group"><label>Poll (sec)</label><input type="number" id="cfg-poll" value="5" min="1" max="300"></div>
+    <div class="form-actions">
+      <button class="btn btn-red btn-sm" onclick="closeModal('settings-modal')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="saveSettings()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="new-drive-modal">
+  <div class="modal-box">
+    <h2>💽 New Drive</h2>
+    <div class="form-group"><label>Device</label><input type="text" id="new-device" placeholder="/dev/sdb"></div>
+    <div class="form-group"><label>Label</label><input type="text" id="new-label" placeholder="drive_name"></div>
+    <div class="form-group"><label>Server</label><select id="new-server"></select></div>
+    <div class="form-actions">
+      <button class="btn btn-red btn-sm" onclick="closeModal('new-drive-modal')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="actionNewDrive()">⚡ Start</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script><script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const S = {
+  servers: [], activeStage: "recovery", activeDrive: "sophjus",
+  status: null, settings: {}, logLines: [], pollTimer: null,
+  lastFileCount: 0, sparklineHistory: [], _lastGen: null,
+};
+
+let scene, camera, renderer, orbitCtrl;
+let hddGroup, platter, armGroup, laserBeam, readHead, laserGlow;
+let recoveryParticles, carvingGroup, classifyGroup, migrateGroup, verifyGroup;
+let badSectorMarkers = [], sectorTiles = [];
+let targetArmAngle = 0, currentArmAngle = 0;
+let platterSpeed = 0.3, targetPlatterSpeed = 0.3;
+let laserIntensity = 0, targetLaserIntensity = 0;
+let carvingCards = [], classifyItems = [], migrateParticles = [], verifyObjects = [];
+let migrateNodeData = [];
+
+function isDark() { return document.documentElement.getAttribute("data-theme") === "dark"; }
+
+function initThreeJS() {
+  const container = document.getElementById("three-container");
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 400;
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(isDark() ? 0x0a0a0f : 0xf2d5cf, 0.00005);
+  scene.background = new THREE.Color(isDark() ? 0x0a0a0f : 0xfaf3ee);
+
+  camera = new THREE.PerspectiveCamera(50, w / h, 0.5, 100);
+  camera.position.set(4, 3.5, 8);
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = isDark() ? 1.2 : 1.0;
+  container.appendChild(renderer.domElement);
+
+  orbitCtrl = new OrbitControls(camera, renderer.domElement);
+  orbitCtrl.enableDamping = true;
+  orbitCtrl.dampingFactor = 0.08;
+  orbitCtrl.minDistance = 3;
+  orbitCtrl.maxDistance = 15;
+  orbitCtrl.maxPolarAngle = Math.PI * 0.7;
+  orbitCtrl.target.set(0, 0.1, 0);
+  orbitCtrl.autoRotate = true;
+  orbitCtrl.autoRotateSpeed = 0.2;
+
+  // Lights
+  scene.add(new THREE.AmbientLight(isDark() ? 0x1a1a4a : 0xffeedd, 0.6));
+  
+  const key = new THREE.DirectionalLight(isDark() ? 0xaaccff : 0xffffff, 2.5);
+  key.position.set(5, 8, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.near = 0.5;
+  key.shadow.camera.far = 30;
+  key.shadow.camera.left = -8;
+  key.shadow.camera.right = 8;
+  key.shadow.camera.top = 8;
+  key.shadow.camera.bottom = -8;
+  scene.add(key);
+
+  const rimLight = new THREE.DirectionalLight(isDark() ? 0x00ff88 : 0x88bbff, 0.8);
+  rimLight.position.set(-3, 1, -3);
+  scene.add(rimLight);
+
+  const bottomLight = new THREE.PointLight(isDark() ? 0x004488 : 0x8899cc, 3, 8);
+  bottomLight.position.set(0, -2, 0);
+  scene.add(bottomLight);
+
+  // Ground
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(14, 14),
+    new THREE.MeshStandardMaterial({ color: isDark() ? 0x0a0a1a : 0xf0e8e0, roughness: 0.9, metalness: 0.2, transparent: true, opacity: 0.5 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1.5;
+  ground.receiveShadow = true;
+  ground.name = "ground";
+  scene.add(ground);
+
+  scene.add(new THREE.PolarGridHelper(6, 48, 32, 128, isDark() ? 0x1a1a3a : 0xd8d0c8, isDark() ? 0x1a1a3a : 0xd0c8c0));
+
+  // === HARD DRIVE MODEL ===
+  hddGroup = new THREE.Group();
+  hddGroup.name = "hdd";
+  scene.add(hddGroup);
+
+  // Chassis
+  const chassisGeo = new THREE.BoxGeometry(3.2, 0.2, 4.4);
+  const chassisMat = new THREE.MeshStandardMaterial({ color: isDark() ? 0x1a1a2e : 0x8899aa, roughness: 0.4, metalness: 0.8 });
+  const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+  chassis.position.y = -0.15;
+  chassis.castShadow = true;
+  chassis.receiveShadow = true;
+  hddGroup.add(chassis);
+
+  // Cover
+  const coverGeo = new THREE.BoxGeometry(3.0, 0.05, 4.2);
+  const coverMat = new THREE.MeshStandardMaterial({ color: isDark() ? 0x222240 : 0xaabbcc, roughness: 0.3, metalness: 0.9 });
+  const cover = new THREE.Mesh(coverGeo, coverMat);
+  cover.position.y = 0.0;
+  cover.castShadow = true;
+  hddGroup.add(cover);
+
+  // Platter
+  platter = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.2, 1.2, 0.06, 64),
+    new THREE.MeshStandardMaterial({ color: isDark() ? 0x334466 : 0x889999, roughness: 0.12, metalness: 0.95 })
+  );
+  platter.position.y = 0.06;
+  platter.castShadow = true;
+  platter.name = "platter";
+  hddGroup.add(platter);
+
+  // Sector tiles
+  const sectorGroup = new THREE.Group();
+  sectorGroup.position.y = 0.095;
+  sectorGroup.name = "sectors";
+  hddGroup.add(sectorGroup);
+  sectorTiles = [];
+  for (let i = 0; i < 200; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 0.2 + Math.random() * 1.0;
+    const tile = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.04, 0.04),
+      new THREE.MeshBasicMaterial({ color: 0x444466, transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+    );
+    tile.rotation.x = -Math.PI / 2;
+    tile.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+    tile.userData = { baseColor: 0x444466, targetColor: 0x444466, angle, radius };
+    sectorGroup.add(tile);
+    sectorTiles.push(tile);
+  }
+
+  // Platter rings
+  for (let r = 0.25; r <= 1.1; r += 0.18) {
+    const ringGeo = new THREE.TorusGeometry(r, 0.008, 8, 80);
+    const ringMat = new THREE.MeshStandardMaterial({ color: isDark() ? 0x556688 : 0x889999, roughness: 0.2, metalness: 0.85, emissive: isDark() ? 0x112233 : 0x334455, emissiveIntensity: 0.3 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.094;
+    hddGroup.add(ring);
+  }
+
+  // Hub
+  const hubGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.08, 32);
+  const hub = new THREE.Mesh(hubGeo, new THREE.MeshStandardMaterial({ color: isDark() ? 0x8899aa : 0x667788, roughness: 0.2, metalness: 0.9 }));
+  hub.position.y = 0.1;
+  hddGroup.add(hub);
+
+  // === READ/WRITE ARM ===
+  armGroup = new THREE.Group();
+  armGroup.position.set(0, 0.08, 0);
+  armGroup.name = "arm";
+  hddGroup.add(armGroup);
+
+  const pivotGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.12, 16);
+  const pivotMat = new THREE.MeshStandardMaterial({ color: isDark() ? 0x8899aa : 0x667788, roughness: 0.2, metalness: 0.9 });
+  const pivot = new THREE.Mesh(pivotGeo, pivotMat);
+  pivot.position.set(0.85, 0.02, -0.75);
+  armGroup.add(pivot);
+
+  const beamGeo = new THREE.BoxGeometry(1.5, 0.028, 0.06);
+  const beam = new THREE.Mesh(beamGeo, new THREE.MeshStandardMaterial({ color: isDark() ? 0x8899aa : 0x778899, roughness: 0.3, metalness: 0.9 }));
+  beam.position.set(0.12, 0.08, -0.55);
+  beam.rotation.z = 0.2;
+  beam.castShadow = true;
+  armGroup.add(beam);
+
+  readHead = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0x00ff88, roughness: 0.2, metalness: 0.3, emissive: 0x00ff88, emissiveIntensity: 0.8 })
+  );
+  readHead.position.set(-0.25, 0.11, -0.35);
+  armGroup.add(readHead);
+
+  laserBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.008, 0.012, 0.18, 8),
+    new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.6 })
+  );
+  laserBeam.position.set(-0.25, 0.03, -0.35);
+  armGroup.add(laserBeam);
+
+  laserGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.8 })
+  );
+  laserGlow.position.set(-0.25, 0.003, -0.35);
+  armGroup.add(laserGlow);
+
+  // === DATA PARTICLES ===
+  const pCount = 300;
+  const pGeo = new THREE.BufferGeometry();
+  const pos = new Float32Array(pCount * 3);
+  const cols = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount; i++) {
+    pos[i * 3] = (Math.random() - 0.5) * 3;
+    pos[i * 3 + 1] = Math.random() * 2;
+    pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
+    cols[i * 3] = Math.random() * 0.2;
+    cols[i * 3 + 1] = 0.5 + Math.random() * 0.5;
+    cols[i * 3 + 2] = Math.random() * 0.4;
+  }
+  pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  pGeo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  recoveryParticles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+    size: 0.02, vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.7
+  }));
+  hddGroup.add(recoveryParticles);
+
+  // === BAD SECTOR MARKERS ===
+  badSectorMarkers = [];
+  for (let i = 0; i < 60; i++) {
+    const dotGeo = new THREE.SphereGeometry(0.02, 6, 6);
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0 });
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * 1.15;
+    dot.position.set(Math.cos(angle) * radius, 0.092, Math.sin(angle) * radius);
+    dot.userData = { baseY: 0.092, pulseOffset: Math.random() * Math.PI * 2 };
+    hddGroup.add(dot);
+    badSectorMarkers.push(dot);
+  }
+
+  window.addEventListener("resize", onResize);
+}
+
+function buildCarvingScene() {
+  carvingGroup = new THREE.Group();
+  carvingGroup.name = "carving";
+  carvingGroup.visible = false;
+  scene.add(carvingGroup);
+  const src = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 32), new THREE.MeshStandardMaterial({ color: 0x334466, roughness: 0.3, metalness: 0.8, emissive: 0x112244, emissiveIntensity: 0.5 }));
+  src.position.y = 0.1;
+  carvingGroup.add(src);
+  carvingCards = [];
+  for (let i = 0; i < 35; i++) {
+    const card = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.008), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(i / 35, 0.7, 0.5), roughness: 0.3, metalness: 0.5, emissive: new THREE.Color().setHSL(i / 35, 0.7, 0.3), emissiveIntensity: 0.5 }));
+    const a = (i / 35) * Math.PI * 2;
+    const d = 0.7 + Math.random() * 0.3;
+    card.position.set(Math.cos(a) * d, 0.25 + Math.random() * 0.5, Math.sin(a) * d);
+    card.userData = { baseAngle: a, baseDist: d, speed: 0.3 + Math.random() * 0.7, floatOffset: Math.random() * Math.PI * 2 };
+    carvingGroup.add(card);
+    carvingCards.push(card);
+  }
+}
+
+function buildClassifyScene() {
+  classifyGroup = new THREE.Group();
+  classifyGroup.name = "classify";
+  classifyGroup.visible = false;
+  scene.add(classifyGroup);
+  const binDefs = [{ x: -1.5, z: 0, color: 0x8839ef }, { x: 0, z: -1.2, color: 0x1e66f5 }, { x: 1.5, z: 0, color: 0xe78284 }];
+  for (const bd of binDefs) {
+    const bin = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.5), new THREE.MeshStandardMaterial({ color: bd.color, roughness: 0.3, metalness: 0.6, emissive: bd.color, emissiveIntensity: 0.3, transparent: true, opacity: 0.8 }));
+    bin.position.set(bd.x, 0.2, bd.z);
+    classifyGroup.add(bin);
+  }
+  classifyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0xa6d189, roughness: 0.2, metalness: 0.5, emissive: 0xa6d189, emissiveIntensity: 0.5 })));
+  classifyItems = [];
+  for (let i = 0; i < 25; i++) {
+    const item = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6) }));
+    item.position.set(0, 0.15, 0);
+    const target = binDefs[Math.floor(Math.random() * 3)];
+    item.userData = { target, progress: Math.random(), speed: 0.2 + Math.random() * 0.4 };
+    classifyGroup.add(item);
+    classifyItems.push(item);
+  }
+}
+
+function buildMigrationScene() {
+  migrateGroup = new THREE.Group();
+  migrateGroup.name = "migrate";
+  migrateGroup.visible = false;
+  scene.add(migrateGroup);
+  migrateNodeData = [
+    { x: -2.5, z: 0, color: 0x8caaee }, { x: 0, z: -1.5, color: 0xca9ee6 }, { x: 0, z: 1.5, color: 0xa6d189 },
+    { x: 2.5, z: -1, color: 0x8839ef }, { x: 2.5, z: 1, color: 0x1e66f5 }
+  ];
+  for (const nd of migrateNodeData) {
+    const node = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), new THREE.MeshStandardMaterial({ color: nd.color, roughness: 0.2, metalness: 0.7, emissive: nd.color, emissiveIntensity: 0.6 }));
+    node.position.set(nd.x, 0.25, nd.z);
+    migrateGroup.add(node);
+  }
+  const conns = [[0, 1], [0, 2], [1, 3], [2, 3], [1, 4]];
+  for (const [a, b] of conns) {
+    const na = migrateNodeData[a], nb = migrateNodeData[b];
+    const dx = nb.x - na.x, dz = nb.z - na.z, len = Math.sqrt(dx * dx + dz * dz);
+    const line = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, len, 8), new THREE.MeshBasicMaterial({ color: 0x446688, transparent: true, opacity: 0.4 }));
+    line.position.set((na.x + nb.x) / 2, 0.25, (na.z + nb.z) / 2);
+    line.rotation.z = Math.PI / 2;
+    line.rotation.y = Math.atan2(dz, dx);
+    migrateGroup.add(line);
+  }
+  migrateParticles = [];
+  for (let i = 0; i < 30; i++) {
+    const part = new THREE.Mesh(new THREE.SphereGeometry(0.025, 4, 4), new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.6 }));
+    part.position.set(migrateNodeData[0].x, 0.3, migrateNodeData[0].z);
+    const target = migrateNodeData[1 + Math.floor(Math.random() * 4)];
+    part.userData = { start: migrateNodeData[0], end: target, progress: Math.random(), speed: 0.08 + Math.random() * 0.25 };
+    migrateGroup.add(part);
+    migrateParticles.push(part);
+  }
+}
+
+function buildVerifyScene() {
+  verifyGroup = new THREE.Group();
+  verifyGroup.name = "verify";
+  verifyGroup.visible = false;
+  scene.add(verifyGroup);
+  verifyObjects = [];
+  for (let i = 0; i < 30; i++) {
+    const file = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.01), new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.5 }));
+    const col = i % 6, row = Math.floor(i / 6);
+    file.position.set((col - 2.5) * 0.4, 0.15, (row - 2) * 0.4);
+    file.userData = { verified: false, checkTime: Math.random() * 5 };
+    verifyGroup.add(file);
+    verifyObjects.push(file);
+  }
+}
+const animClock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(animClock.getDelta(), 0.1);
+  const t = performance.now() * 0.001;
+  orbitCtrl.update();
+
+  platterSpeed += (targetPlatterSpeed - platterSpeed) * 2.5 * dt;
+  if (platter) platter.rotation.y += platterSpeed * dt;
+
+  currentArmAngle += (targetArmAngle - currentArmAngle) * 3.5 * dt;
+  if (armGroup) armGroup.rotation.y = currentArmAngle;
+
+  laserIntensity += (targetLaserIntensity - laserIntensity) * 4 * dt;
+  if (laserBeam) laserBeam.material.opacity = 0.12 + laserIntensity * 0.7;
+  if (readHead) readHead.material.emissiveIntensity = 0.3 + laserIntensity * 2;
+  if (laserGlow) {
+    laserGlow.material.opacity = 0.15 + laserIntensity * 1.8;
+    laserGlow.scale.setScalar(0.5 + laserIntensity * 2);
+  }
+
+  const showBad = (S.status && S.status.ddrescue && S.status.ddrescue.bad_sectors > 3);
+  badSectorMarkers.forEach(function(dot) {
+    const to = showBad ? 0.35 + Math.sin(t * 6 + dot.userData.pulseOffset) * 0.25 : 0;
+    dot.material.opacity += (to - dot.material.opacity) * 3 * dt;
+    if (showBad) dot.position.y = dot.userData.baseY + Math.sin(t * 5 + dot.userData.pulseOffset) * 0.008;
+  });
+
+  if (S.activeStage === "recovery") {
+    sectorTiles.forEach(function(tile) {
+      const badPct = (S.status && S.status.ddrescue ? S.status.ddrescue.bad_sectors : 0) / 400;
+      const recPct = (S.status && S.status.ddrescue ? S.status.ddrescue.pct : 0) / 100;
+      const r = Math.random();
+      tile.userData.targetColor = r < badPct * 0.3 ? 0xff3344 : r < recPct ? 0x00ff88 : 0x444466;
+      tile.material.color.lerp(new THREE.Color(tile.userData.targetColor), 2 * dt);
+      tile.material.opacity = 0.2 + (tile.userData.targetColor === 0x00ff88 ? 0.4 : 0);
+    });
+  }
+
+  if (recoveryParticles && (S.activeStage === "recovery" || S.activeStage === "classify" || S.activeStage === "verify")) {
+    const pa = recoveryParticles.geometry.attributes.position.array;
+    const rs = 0.25 + laserIntensity * 2;
+    for (let i = 0; i < pa.length / 3; i++) {
+      pa[i * 3 + 1] += rs * dt;
+      if (pa[i * 3 + 1] > 2.5) { pa[i * 3 + 1] = 0.04; pa[i * 3] = (Math.random() - 0.5) * 2.4; pa[i * 3 + 2] = (Math.random() - 0.5) * 3.6; }
+      pa[i * 3] += Math.sin(t * 2 + i * 0.5) * 0.08 * dt;
+    }
+    recoveryParticles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  if (S.activeStage === "carving" && carvingGroup && carvingGroup.visible) {
+    carvingCards.forEach(function(card) {
+      card.userData.baseAngle += card.userData.speed * dt;
+      const a = card.userData.baseAngle, d = card.userData.baseDist;
+      card.position.x = Math.cos(a) * d; card.position.z = Math.sin(a) * d;
+      card.position.y += Math.sin(t * 3 + card.userData.floatOffset) * 0.3 * dt;
+      if (card.position.y > 1.5) card.position.y = 0.1;
+      card.rotation.y += dt; card.rotation.x += dt * 0.5;
+    });
+  }
+
+  if (S.activeStage === "classify" && classifyGroup && classifyGroup.visible) {
+    classifyItems.forEach(function(item) {
+      item.userData.progress += item.userData.speed * dt;
+      if (item.userData.progress > 1) { item.userData.progress = 0; item.userData.target = [{ x: -1.5, z: 0 }, { x: 0, z: -1.2 }, { x: 1.5, z: 0 }][Math.floor(Math.random() * 3)]; }
+      const p = item.userData.progress;
+      item.position.x = item.userData.target.x * p; item.position.z = item.userData.target.z * p;
+      item.position.y = 0.15 + Math.sin(p * Math.PI) * 0.5;
+      if (p > 0.9) item.material.color.set(0xa6d189);
+    });
+  }
+
+  if (S.activeStage === "migrate" && migrateGroup && migrateGroup.visible) {
+    migrateParticles.forEach(function(part) {
+      part.userData.progress += part.userData.speed * dt;
+      if (part.userData.progress > 1) { part.userData.progress = 0; part.userData.end = migrateNodeData[1 + Math.floor(Math.random() * 4)]; }
+      const p = part.userData.progress, s = part.userData.start, e = part.userData.end;
+      part.position.x = s.x + (e.x - s.x) * p; part.position.z = s.z + (e.z - s.z) * p;
+      part.position.y = 0.3 + Math.sin(p * Math.PI) * 0.35;
+    });
+  }
+
+  if (S.activeStage === "verify" && verifyGroup && verifyGroup.visible) {
+    verifyObjects.forEach(function(obj) {
+      if (!obj.userData.verified) {
+        obj.userData.checkTime -= dt;
+        if (obj.userData.checkTime < 0) { obj.userData.verified = true; obj.material.color.set(0xa6d189); obj.material.emissive = new THREE.Color(0xa6d189); obj.material.emissiveIntensity = 0.6; }
+      }
+    });
+  }
+
+  renderer.render(scene, camera);
+}
+
+function switchStage(name) {
+  S.activeStage = name;
+  document.querySelectorAll(".stage-tab").forEach(function(t) { t.classList.remove("active"); });
+  var tab = document.querySelector(".stage-tab[data-stage=\"" + name + "\"]");
+  if (tab) tab.classList.add("active");
+  var labels = { recovery: "🩺 BLOCK RECOVERY", carving: "🔬 FILE CARVING", classify: "🏷 CLASSIFICATION", migrate: "📡 DATA MIGRATION", immich: "🖼 IMMICH LIBRARY", jellyfin: "🎬 JELLYFIN LIBRARY", verify: "✅ VERIFICATION" };
+  document.getElementById("stage-label").textContent = labels[name] || name;
+  ["recovery", "carving", "classify", "migrate", "immich", "jellyfin", "verify"].forEach(function(s) {
+    var el = document.getElementById("stage-" + s);
+    if (el) el.style.display = s === name ? "" : "none";
+  });
+  if (hddGroup) hddGroup.visible = ["recovery", "classify", "verify"].indexOf(name) >= 0;
+  if (carvingGroup) carvingGroup.visible = name === "carving";
+  if (classifyGroup) classifyGroup.visible = name === "classify";
+  if (migrateGroup) migrateGroup.visible = name === "migrate";
+  if (verifyGroup) verifyGroup.visible = name === "verify";
+  var targets = { recovery: [4, 3.5, 8], carving: [2, 2, 5], classify: [0, 3, 5], migrate: [0, 4, 5], verify: [0, 3, 4] };
+  var tgt = targets[name] || targets.recovery;
+  camera.position.lerp(new THREE.Vector3(tgt[0], tgt[1], tgt[2]), 0.5);
+  orbitCtrl.target.lerp(new THREE.Vector3(0, 0.1, 0), 0.5);
+  if (name === "recovery") { targetPlatterSpeed = 0.5; targetLaserIntensity = 0.6; }
+  else if (name === "carving") { targetPlatterSpeed = 0.08; targetLaserIntensity = 0.03; }
+  else { targetPlatterSpeed = 0.05; targetLaserIntensity = 0.02; }
+  addLogLine("Stage: " + (labels[name] || name), "");
+  if (S.status) updateAllUI(S.status);
+}
+window.switchStage = switchStage;
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  html.setAttribute("data-theme", next);
+  localStorage.setItem("la_migra_theme", next);
+  var dk = next === "dark";
+  scene.background = new THREE.Color(dk ? 0x0a0a0f : 0xfaf3ee);
+  scene.fog = new THREE.FogExp2(dk ? 0x0a0a0f : 0xf2d5cf, 0.00005);
+  renderer.toneMappingExposure = dk ? 1.2 : 1.0;
+  var gnd = scene.getObjectByName("ground");
+  if (gnd) gnd.material.color.set(dk ? 0x0a0a1a : 0xf0e8e0);
+  addLogLine("Theme: " + next, "");
+}
+window.toggleTheme = toggleTheme;
+
+function toast(msg, type) {
+  type = type || "";
+  var c = document.getElementById("toast-container");
+  var el = document.createElement("div");
+  el.className = "toast " + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3500);
+}
+
+function addLogLine(msg, type) {
+  type = type || "";
+  var ts = new Date().toLocaleTimeString("en-US", { hour12: false });
+  S.logLines.push({ ts: ts, msg: msg, type: type });
+  if (S.logLines.length > 500) S.logLines.shift();
+  var scroll = document.getElementById("log-scroll");
+  var line = document.createElement("div");
+  line.className = "log-line " + type;
+  line.innerHTML = "<span class=\"ts\">" + ts + "</span><span class=\"msg\">" + msg + "</span>";
+  scroll.appendChild(line);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+  if (id === "new-drive-modal") {
+    document.getElementById("new-server").innerHTML = S.servers.map(function(s) { return "<option value=\"" + s.name + "\">" + s.name + " (" + s.host + ")</option>"; }).join("") || "<option>zima</option>";
+  }
+  if (id === "settings-modal") populateSettings();
+}
+window.openModal = openModal;
+
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+window.closeModal = closeModal;
+document.addEventListener("click", function(e) { if (e.target.classList.contains("modal-bg")) e.target.classList.remove("open"); });
+
+function populateSettings() {
+  document.getElementById("cfg-immich").value = S.settings.immichPath || "/srv/photos/external";
+  document.getElementById("cfg-jellyfin").value = S.settings.jellyfinPath || "/srv/media";
+  document.getElementById("cfg-recovery").value = S.settings.recoveryPath || "/srv/photos/foremost_out";
+  document.getElementById("cfg-review").value = S.settings.reviewPath || "/srv/photos/_review";
+  document.getElementById("cfg-poll").value = S.settings.pollInterval || 5;
+  renderServerList();
+}
+
+function renderServerList() {
+  document.getElementById("server-list").innerHTML = S.servers.map(function(s, i) {
+    return "<div class=\"server-entry\"><div class=\"s-info\"><div class=\"s-name\">" + s.name + "</div><div class=\"s-host\">" + s.host + " (" + (s.user || "root") + ")</div></div><button class=\"btn btn-red btn-sm\" onclick=\"removeServer(" + i + ")\">✕</button></div>";
+  }).join("");
+}
+
+function addServer() {
+  var name = prompt("Server name:"); if (!name) return;
+  var host = prompt("Hostname/IP:"); if (!host) return;
+  var user = prompt("SSH user (default root):") || "root";
+  S.servers.push({ name: name, host: host, user: user });
+  saveSettings(); renderServerList(); toast("Server \"" + name + "\" added");
+}
+window.addServer = addServer;
+
+function removeServer(i) {
+  toast("Server \"" + S.servers[i].name + "\" removed");
+  S.servers.splice(i, 1); saveSettings(); renderServerList();
+}
+window.removeServer = removeServer;
+
+function saveSettings() {
+  S.settings.immichPath = document.getElementById("cfg-immich").value;
+  S.settings.jellyfinPath = document.getElementById("cfg-jellyfin").value;
+  S.settings.recoveryPath = document.getElementById("cfg-recovery").value;
+  S.settings.reviewPath = document.getElementById("cfg-review").value;
+  S.settings.pollInterval = parseInt(document.getElementById("cfg-poll").value) || 5;
+  S.settings.servers = S.servers;
+  localStorage.setItem("la_migra_settings", JSON.stringify(S.settings));
+  closeModal("settings-modal"); toast("✅ Settings saved");
+  if (S.pollTimer) { clearInterval(S.pollTimer); S.pollTimer = null; }
+  startPolling();
+}
+window.saveSettings = saveSettings;
+
+function loadSettings() {
+  try { var raw = localStorage.getItem("la_migra_settings"); if (raw) S.settings = JSON.parse(raw); } catch(e) {}
+  S.settings.immichPath = S.settings.immichPath || "/srv/photos/external";
+  S.settings.jellyfinPath = S.settings.jellyfinPath || "/srv/media";
+  S.settings.recoveryPath = S.settings.recoveryPath || "/srv/photos/foremost_out";
+  S.settings.reviewPath = S.settings.reviewPath || "/srv/photos/_review";
+  S.settings.pollInterval = S.settings.pollInterval || 5;
+  S.servers = S.settings.servers || [{ name: "zima", host: "zima", user: "root" }];
+  if (S.servers.length === 0) S.servers = [{ name: "zima", host: "zima", user: "root" }];
+}
+
+async function fetchStatus() {
+  try {
+    var resp = await fetch("/status.json?_=" + Date.now(), { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    S.status = await resp.json(); return S.status;
+  } catch(e) {
+    if (typeof window.__INITIAL_STATUS__ !== "undefined") { S.status = window.__INITIAL_STATUS__; return S.status; }
+    return null;
+  }
+}
+
+async function apiCall(endpoint, body) {
+  try {
+    var opts = { method: body ? "POST" : "GET", headers: {} };
+    if (body) { opts.headers["Content-Type"] = "application/x-www-form-urlencoded"; opts.body = new URLSearchParams(body).toString(); }
+    var resp = await fetch(endpoint, opts); return await resp.json();
+  } catch(e) { toast("API error: " + e.message, "error"); return { ok: false, error: e.message }; }
+}
+
+async function actionStartMigration() {
+  toast("🚀 Starting migration...");
+  var r = await apiCall("/api/start-migration");
+  if (r.ok) { r.actions.forEach(function(a) { toast(a); }); addLogLine("Migration initiated", "ok"); }
+  else { toast("Failed: " + (r.error || "?"), "error"); }
+}
+window.actionStartMigration = actionStartMigration;
+
+async function actionNewDrive() {
+  var dev = document.getElementById("new-device").value.trim();
+  var label = document.getElementById("new-label").value.trim() || "unknown";
+  if (!dev) { toast("Enter device path", "error"); return; }
+  toast("💽 Starting " + dev + "...");
+  var r = await apiCall("/api/new-drive", { device: dev, label: label });
+  if (r.ok) { toast("✅ PID: " + r.pid); addLogLine("New drive: " + dev + " (PID " + r.pid + ")", "ok"); closeModal("new-drive-modal"); }
+  else { toast("Failed: " + (r.error || "?"), "error"); }
+}
+window.actionNewDrive = actionNewDrive;
+
+async function actionClassify() {
+  toast("🔍 Run on Zima: bash /srv/photos/classify_media.sh");
+  addLogLine("Classify: run manually on Zima", "warn");
+}
+window.actionClassify = actionClassify;
+
+function updateAllUI(status) {
+  if (!status) return;
+  var now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString("en-US", { hour12: false });
+
+  document.getElementById("dot-server").className = "dot " + (!!status.generated_at ? "online" : "");
+  document.getElementById("dot-recovery").className = "dot " + (status.ddrescue && status.ddrescue.running ? "busy" : "");
+  var fmR = status.foremost && status.foremost.running;
+  document.getElementById("dot-carving").className = "dot " + (fmR ? "busy" : (status.foremost ? "online" : ""));
+  document.getElementById("dot-migration").className = "dot " + (status.auto_running ? "busy" : "");
+
+  if (fmR) { targetPlatterSpeed = 1.5 + (status.foremost.pct || 0) * 0.03; targetArmAngle = Math.sin(now * 0.003) * 0.55; targetLaserIntensity = 1.0; }
+  else if (status.ddrescue && status.ddrescue.running) { targetPlatterSpeed = 0.8; targetArmAngle = Math.sin(now * 0.001) * 0.35; targetLaserIntensity = 0.7; }
+  else { targetPlatterSpeed = 0.08; targetArmAngle = 0; targetLaserIntensity = 0.03; }
+
+  var dd = status.ddrescue || {};
+  document.getElementById("v-name").textContent = S.activeDrive || "sophjus";
+  document.getElementById("v-sectors").textContent = dd.pct != null ? dd.pct.toFixed(1) + "%" : "--";
+  document.getElementById("v-bad").textContent = dd.bad_sectors || "0";
+  document.getElementById("v-read").textContent = dd.rescued_gb ? dd.rescued_gb + " GB" : "--";
+  document.getElementById("v-rate").textContent = dd.rate_gb_h ? dd.rate_gb_h + " GB/h" : "--";
+  document.getElementById("v-eta").textContent = dd.eta_h > 0 ? "~" + dd.eta_h + "h" : (dd.running ? "..." : "✓");
+
+  document.getElementById("badge-recovery").textContent = dd.pct ? dd.pct.toFixed(1) + "%" : "--";
+  var fm = status.foremost;
+  document.getElementById("badge-carving").textContent = fm && fm.pct ? fm.pct.toFixed(1) + "%" : "--";
+  document.getElementById("badge-migrate").textContent = status.auto_running ? "ON" : "--";
+
+  var recPct = dd.pct || 0;
+  document.getElementById("bar-rec").style.width = recPct + "%";
+  document.getElementById("s-rec-pct").textContent = recPct.toFixed(1) + "%";
+  document.getElementById("s-rec-gb").textContent = (dd.rescued_gb || "?") + " / " + (dd.total_gb || "?") + " GB";
+  document.getElementById("s-rec-bad").textContent = (dd.bad_sectors || "0") + " sectors (" + (dd.bad_kb || "?") + " KB)";
+  document.getElementById("s-rec-eta").textContent = dd.eta_h > 0 ? "~" + dd.eta_h + "h" : (dd.running ? "..." : "Complete ✓");
+
+  if (fm) {
+    document.getElementById("bar-fm").style.width = (fm.pct || 0) + "%";
+    document.getElementById("s-fm-pct").textContent = (fm.pct || 0).toFixed(1) + "%";
+    document.getElementById("s-fm-files").textContent = (fm.total_files || 0).toLocaleString();
+    document.getElementById("s-fm-size").textContent = fm.total_size || "--";
+    document.getElementById("s-fm-eta").textContent = fm.eta_h > 0 ? "~" + fm.eta_h + "h " + fm.eta_m + "m" : (fmR ? "..." : "Done ✓");
+    document.getElementById("fm-total-label").textContent = (fm.total_files || 0).toLocaleString() + " files";
+    document.getElementById("fm-size-label").textContent = fm.total_size || "0 B";
+
+    if (fm.by_type) {
+      var types = Object.entries(fm.by_type).filter(function(e) { return e[1] > 0; }).sort(function(a, b) { return b[1] - a[1]; });
+      var icons = { jpg: "📷", png: "🖼️", mp4: "🎬", mov: "🎥", gif: "🎞️", wav: "🎵", pdf: "📄", zip: "📦", avi: "📹", htm: "🌐", other: "📁" };
+      document.getElementById("file-counter-grid").innerHTML = types.map(function(e) {
+        var cls = "file-counter";
+        if (e[0] === "jpg" || e[0] === "png") cls += " photo";
+        if (S.lastFileCount > 0 && fm.total_files > S.lastFileCount) cls += " growing";
+        return "<div class=\"" + cls + "\"><div class=\"ci\">" + (icons[e[0]] || "📁") + "</div><div class=\"cn\">" + e[1].toLocaleString() + "</div><div class=\"cl\">" + e[0] + "</div></div>";
+      }).join("");
+    }
+
+    S.sparklineHistory.push(fm.total_files);
+    if (S.sparklineHistory.length > 40) S.sparklineHistory.shift();
+    var sparkEl = document.getElementById("sparkline");
+    if (sparkEl && S.sparklineHistory.length > 1) {
+      var max = Math.max.apply(null, S.sparklineHistory) || 1;
+      var min = Math.min.apply(null, S.sparklineHistory);
+      var range = max - min || 1, bars = "";
+      for (var i = 0; i < S.sparklineHistory.length; i++) {
+        var h = Math.max(((S.sparklineHistory[i] - min) / range) * 100, 4);
+        bars += "<div class=\"sparkline-bar\" style=\"height:" + h + "%\"></div>";
+      }
+      sparkEl.innerHTML = bars;
+    }
+
+    var river = document.getElementById("file-river");
+    if (river && river.firstElementChild) river.firstElementChild.style.animationDuration = fmR ? "4s" : "20s";
+
+    if (S.lastFileCount > 0 && fm.total_files > S.lastFileCount && fm.total_files - S.lastFileCount > 50)
+      addLogLine("+" + (fm.total_files - S.lastFileCount).toLocaleString() + " files carved", "ok");
+    S.lastFileCount = fm.total_files;
+  }
+
+  document.getElementById("s-mig-status").textContent = status.auto_running ? "Running PID " + status.auto_pid : "Standby";
+  document.getElementById("s-mig-dest").textContent = "zima";
+
+  if (status.folders) {
+    var fb = document.getElementById("folder-bars");
+    fb.innerHTML = Object.entries(status.folders).map(function(e) {
+      var f = e[1], pct = f.files_total > 0 ? (f.files_done / f.files_total * 100).toFixed(1) : 0;
+      var doneClass = parseFloat(pct) >= 99 ? " done" : "";
+      return "<div class=\"folder-row\"><span class=\"folder-label\">" + e[0] + "</span><div class=\"folder-track\"><div class=\"folder-fill" + doneClass + "\" id=\"fbar-" + e[0] + "\" style=\"width:" + Math.max(parseFloat(pct), 2) + "%\">" + f.files_done + "/" + f.files_total + " files — " + f.gb_done.toFixed(1) + "/" + f.gb_total + " GB</div></div></div>";
+    }).join("");
+  }
+
+  updateDriveCards(status);
+  if (status.generated_at && !S._lastGen) addLogLine("Connected — " + status.generated_at, "ok");
+  S._lastGen = status.generated_at;
+}
+
+function updateDriveCards(status) {
+  var dd = status.ddrescue || {}, fm = status.foremost, pct = dd.pct || 0;
+  var html = "";
+  html += "<div class=\"drive-card" + (S.activeDrive === "sophjus" ? " active" : "") + "\" onclick=\"selectDrive('sophjus')\"><div class=\"d-icon\">💽</div><div class=\"d-label\">sophjus</div><div class=\"d-pct\">" + pct.toFixed(1) + "%</div><div class=\"d-sub\">" + (dd.rescued_gb || "?") + " GB rescued</div><div class=\"d-bar\"><div class=\"d-bar-fill\" style=\"width:" + pct + "%\"></div></div></div>";
+  if (parseInt(dd.bad_sectors || 0) > 0) {
+    html += "<div class=\"drive-card\" style=\"border-color:rgba(231,130,132,0.25);\"><div class=\"d-icon\" style=\"border-color:rgba(231,130,132,0.25);animation:none;\">⚠️</div><div class=\"d-label\">BAD SECTORS</div><div class=\"d-pct\" style=\"color:var(--danger);\">" + (dd.bad_sectors || "0") + "</div><div class=\"d-sub\">" + (dd.bad_kb || "?") + " KB</div></div>";
+  }
+  if (fm) {
+    html += "<div class=\"drive-card" + (S.activeDrive === "foremost" ? " active" : "") + "\" onclick=\"selectDrive('foremost')\"><div class=\"d-icon\">🔬</div><div class=\"d-label\">File Carving</div><div class=\"d-pct\">" + (fm.pct || 0).toFixed(1) + "%</div><div class=\"d-sub\">" + (fm.total_files || 0).toLocaleString() + " files</div><div class=\"d-bar\"><div class=\"d-bar-fill\" style=\"width:" + (fm.pct || 0) + "%; background:var(--accent2);\"></div></div></div>";
+  }
+  html += "<div class=\"drive-card add-new\" onclick=\"openModal('new-drive-modal')\"><div class=\"plus\">+</div><div class=\"d-label\" style=\"color:var(--text-dim);\">NEW DRIVE</div></div>";
+  document.getElementById("drives-row").innerHTML = html;
+}
+
+function selectDrive(name) {
+  S.activeDrive = name;
+  if (S.status) updateDriveCards(S.status);
+  switchStage(name === "foremost" ? "carving" : "recovery");
+  addLogLine("Selected: " + name, "");
+}
+window.selectDrive = selectDrive;
+
+function onResize() {
+  var c = document.getElementById("three-container"), w = c.clientWidth, h = c.clientHeight;
+  if (w === 0 || h === 0) return;
+  camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+}
+
+function startPolling() {
+  if (S.pollTimer) { clearInterval(S.pollTimer); S.pollTimer = null; }
+  S.pollTimer = setInterval(pollCycle, (S.settings.pollInterval || 5) * 1000);
+  pollCycle();
+}
+async function pollCycle() { updateAllUI(await fetchStatus()); }
+
+function init() {
+  var theme = localStorage.getItem("la_migra_theme") || "light";
+  document.documentElement.setAttribute("data-theme", theme);
+  loadSettings();
+  initThreeJS();
+  buildCarvingScene();
+  buildClassifyScene();
+  buildMigrationScene();
+  buildVerifyScene();
+  animate();
+  addLogLine("⚡ LA MIGRA — Recovery & Migration Engine", "ok");
+  addLogLine("Theme: " + theme + " | Servers: " + S.servers.map(function(s) { return s.name; }).join(", "), "");
+  addLogLine("Poll: " + S.settings.pollInterval + "s | Immich: " + S.settings.immichPath, "");
+  updateDriveCards({ ddrescue: {}, foremost: null, auto_running: false });
+  startPolling();
+  addLogLine("Polling active — awaiting telemetry...", "");
+}
+
+init();
+</script>
+</body>
+</html>
