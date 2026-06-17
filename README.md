@@ -1,4 +1,4 @@
-# ☽ Saint Charon — Drive Recovery Engine
+# ☽ Saint Charon — Drive Recovery Driven Music Generator Engine
 
 **"Ferryman of Lost Data"** — a real-time 3D dashboard, API server, and vaporwave music engine for monitoring and controlling disk recovery operations.
 
